@@ -177,13 +177,20 @@ final class CustomTableViewIndex: UIView {
         
         switch gesture.state {
         case .changed:
-            for view in continerStackView.subviews {
-                let point = CGPoint(x: 0, y: position.y)
-                if view.frame.contains(point), let button = view as? UIButton  {
-                    scrollToRow(by: button)
-                    break
-                }
-            }
+//            for view in continerStackView.subviews {
+//                let point = CGPoint(x: 0, y: position.y)
+//                if view.frame.contains(point), let button = view as? UIButton  {
+//                    scrollToRow(by: button)
+//                    break
+//                }
+//            }
+            
+            guard
+                let view = continerStackView.subviews.first(where: { $0.frame.contains(CGPoint(x: 0, y: position.y))}),
+                let button = view as? UIButton
+                else { return }
+             scrollToRow(by: button)
+            
             
         default:
             break
