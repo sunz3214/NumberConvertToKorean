@@ -62,9 +62,9 @@ class ViewController: UIViewController {
     
     }
 
-    @IBAction func changed(_ sender: UITextField) {
-        let korean = convertKorean(target: sender.text ?? "알수없음")
-        numberLabel.text = "\(convertByMainUnit(target: korean))"
+       @IBAction func changed(_ sender: UITextField) {
+
+        numberLabel.text = "\(convertByMainUnit(target: sender.text ?? "알수없음"))"
     }
     
     func convertBySubUnit(target: String) -> Int64 {
@@ -92,21 +92,13 @@ class ViewController: UIViewController {
         }
         return sum
     }
-
-    func convertKorean(target: String) -> String {
-        var korean = target
-        KoreanNumber.allCases.forEach {
-            korean = korean.replacingOccurrences(of: "\($0.intValue)", with: $0.rawValue)
-        }
-        return korean
-    }
-
+  
     
     func convertByMainUnit(target: String) -> Int64 {
         var list: [MainUnit: Int64] = [:]
-        var replacedText = target
+        var replacedText = target.replacingOccurrences(of: ",", with: "")
         
-       MainUnit.allCases.forEach {
+        MainUnit.allCases.forEach {
             if $0 != .일 {
                 replacedText = replacedText.replacingOccurrences(of: $0.rawValue, with: "\($0.rawValue)-")
             }
@@ -114,15 +106,25 @@ class ViewController: UIViewController {
         
         for value in replacedText.split(separator:"-") {
             if let last = value.last, let unit = MainUnit(rawValue: String(last)) {
-                let convertedValue = convertBySubUnit(target: String(value)) * unit.intValue
-                list[unit] = convertedValue == 0 ? unit.intValue : convertedValue
+                if let int = Int64(value.replacingOccurrences(of: String(last), with: "")) {
+                    list[unit] = int * unit.intValue
+                } else {
+                    let convertedValue = convertBySubUnit(target: String(value)) * unit.intValue
+                    list[unit] = convertedValue == 0 ? unit.intValue : convertedValue
+                }
+                
             } else {
-                list[MainUnit.일] = convertBySubUnit(target: String(value))
+                if let int = Int64(value) {
+                    list[MainUnit.일] = int
+                } else {
+                    list[MainUnit.일] = convertBySubUnit(target: String(value))
+                }
             }
         }
 
         return list.values.reduce(0, +)
     }
+
     
 }
 
