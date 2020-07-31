@@ -67,43 +67,47 @@ class ViewController: UIViewController {
         numberLabel.text = "\(convertByMainUnit(target: sender.text ?? "알수없음"))"
     }
     
-    func convertBySubUnit(target: String) -> Int64 {
-        var sum: Int64 = 0
-        var prevSubUnit: SubUnit? = nil
-        target.reversed().forEach {
-            if let findedSubUnit = SubUnit(rawValue: String($0)) {
-                if let subUnit = prevSubUnit {
-                    sum += subUnit.intValue
-                    prevSubUnit = nil
-                }
-                prevSubUnit = findedSubUnit
-                
-            } else if let koreanNumber = KoreanNumber(rawValue: String($0)) {
-                if let subUnit = prevSubUnit {
-                    sum += koreanNumber.intValue * subUnit.intValue
-                    prevSubUnit = nil
-                } else {
-                    sum += koreanNumber.intValue
+    func convertByMainUnit(target: String) -> Int64 {
+        func koreanToInt64(target: String) -> Int64 {
+            target.map{ KoreanNumber(rawValue: String($0))?.intValue ?? 0 }.reduce(0, +)
+        }
+        
+        func convertBySubUnit(target: String) -> Int64 {
+            let removedMainUnit: [MainUnit] = MainUnit.allCases.filter{ $0 != .일 }
+            var replacedText = target
+            removedMainUnit.forEach {
+                replacedText = replacedText.replacingOccurrences(of: $0.rawValue, with: "")
+            }
+            SubUnit.allCases.forEach {
+                replacedText = replacedText.replacingOccurrences(of: $0.rawValue, with: "\($0.rawValue)-")
+            }
+
+            let list = replacedText.split(separator: "-").map { value -> Int64 in
+                if let subUnit = SubUnit(rawValue: String(value)) { /// value == "천"
+                    return subUnit.intValue
+                } else if let int = Int64(value) { /// value ==  "120"
+                    return int
+                } else if let last = value.last, let unit = SubUnit(rawValue: String(last)) { /// value == "7천" or value == "칠천"
+                    let numberString = value.filter{ $0 != last }
+                    return (Int64(numberString) ?? koreanToInt64(target: numberString)) * unit.intValue
+                } else { /// value ==  "3" or value == "삼"
+                    return Int64(value) ?? koreanToInt64(target: String(value))
                 }
             }
+            
+            
+            return list.reduce(0, +)
         }
-        if let subUnit = prevSubUnit {
-            sum += subUnit.intValue
-        }
-        return sum
-    }
-  
-    
-    func convertByMainUnit(target: String) -> Int64 {
+
         var list: [MainUnit: Int64] = [:]
-        var replacedText = target.replacingOccurrences(of: ",", with: "")
-        
+        let removerdKeys = ",원₩KRW"
+        var replacedText = target.uppercased().filter{ !removerdKeys.contains($0) }
+
         MainUnit.allCases.forEach {
             if $0 != .일 {
                 replacedText = replacedText.replacingOccurrences(of: $0.rawValue, with: "\($0.rawValue)-")
             }
         }
-        
         for value in replacedText.split(separator:"-") {
             if let last = value.last, let unit = MainUnit(rawValue: String(last)) {
                 if let int = Int64(value.replacingOccurrences(of: String(last), with: "")) {
