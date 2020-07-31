@@ -63,7 +63,8 @@ class ViewController: UIViewController {
     }
 
     @IBAction func changed(_ sender: UITextField) {
-        numberLabel.text = "\(convertByMainUnit(target: sender.text ?? "알수없음"))"
+        let korean = convertKorean(target: sender.text ?? "알수없음")
+        numberLabel.text = "\(convertByMainUnit(target: korean))"
     }
     
     func convertBySubUnit(target: String) -> Int64 {
@@ -92,13 +93,23 @@ class ViewController: UIViewController {
         return sum
     }
 
+    func convertKorean(target: String) -> String {
+        var korean = target
+        KoreanNumber.allCases.forEach {
+            korean = korean.replacingOccurrences(of: "\($0.intValue)", with: $0.rawValue)
+        }
+        return korean
+    }
+
     
     func convertByMainUnit(target: String) -> Int64 {
         var list: [MainUnit: Int64] = [:]
         var replacedText = target
         
-        MainUnit.allCases.forEach {
-            replacedText = replacedText.replacingOccurrences(of: $0.rawValue, with: "\($0.rawValue)-")
+       MainUnit.allCases.forEach {
+            if $0 != .일 {
+                replacedText = replacedText.replacingOccurrences(of: $0.rawValue, with: "\($0.rawValue)-")
+            }
         }
         
         for value in replacedText.split(separator:"-") {
